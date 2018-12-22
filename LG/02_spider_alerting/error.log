@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "port_forwding.py", line 74, in <module>
+    main('port-forward.config', 'error.log')
+  File "port_forwding.py", line 32, in main
+    for settings in parse(setup):
+  File "port_forwding.py", line 40, in parse
+    for line in file(setup):
+NameError: name 'file' is not defined
+Traceback (most recent call last):
+  File "port_forwding.py", line 74, in <module>
+    main('port-forward.config', 'error.log')
+  File "port_forwding.py", line 32, in main
+    for settings in parse(setup):
+  File "port_forwding.py", line 40, in parse
+    for line in file(setup):
+NameError: name 'file' is not defined
+Traceback (most recent call last):
+  File "port_forwding.py", line 75, in <module>
+    main('port-forward.config', 'error.log')
+  File "port_forwding.py", line 32, in main
+    for settings in parse(setup):
+  File "port_forwding.py", line 40, in parse
+    for line in file(setup):
+NameError: name 'file' is not defined

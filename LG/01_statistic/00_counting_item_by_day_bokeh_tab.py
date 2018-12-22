@@ -9,7 +9,7 @@ from bokeh.plotting import figure, show, output_file, ColumnDataSource
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models import  HoverTool,WheelZoomTool, PanTool, ResetTool
 from pathlib import Path
-
+from bokeh.models import DataRange1d, LinearAxis, Range1d
 
 
 oper_list = ['AppleDaily', 'LTN', 'DogNews', 'BusinessTimes','ChinaElectronicsNews','Chinatimes']
@@ -25,8 +25,8 @@ oper_list = ['AppleDaily', 'LTN', 'DogNews', 'BusinessTimes','ChinaElectronicsNe
 #==================================================
 focus  = '2018'
 #focus  = ''
-PATH   = '../00_corpus1/'          # testing (small) corpus
-#PATH = '/data2/Dslab_News/'        # full corpus
+#PATH   = '../00_corpus1/'          # testing (small) corpus
+PATH = '/data2/Dslab_News/'        # full corpus
 
 
 
@@ -70,6 +70,7 @@ def get_oper_count(oper_name,focus):
 #==========================================================================================================
 tab_oo_list = []
 for focus in list(map(str,list(range(2010,2019)))):
+    print('\n=========================' + focus + '=============================')
     #focus = '2018'
 
     #==================================================
@@ -91,7 +92,8 @@ for focus in list(map(str,list(range(2010,2019)))):
     date_news.to_pickle('xxx.pd')
     numlines  = len(date_news.columns)
     #print(date_news)
-    mypalette =Category20c[20][0:numlines]
+    #mypalette =Category20c[20][0:numlines]
+    mypalette = Spectral11
 
     ############################################################################################################
     # method three: p.multi_line w/ ColumnDataSource
@@ -99,17 +101,28 @@ for focus in list(map(str,list(range(2010,2019)))):
     date_news_dict = {'xs':[date_news.index.values for x in range(numlines)],
                       'ys':[date_news[oper_list[x]].values for x in range(numlines)],
                       'labels': oper_list,
-                      'color': Category20c[20][0:numlines]
+                      'color': Category20c[20][0:numlines*2:2]
+                      #'color': Spectral11[1:numlines+1]
                       }
     data = ColumnDataSource(date_news_dict)
+    hover = HoverTool(
+        tooltips=[
+            ('date', 'xs'),
+            ('article', '$ys'),
+        ]
+    )
 
-    p = figure(x_axis_type="datetime",tools="hover")
+    #tools = [PanTool(), WheelZoomTool(), ResetTool(), hover]
+    #p = figure(x_axis_type="datetime",tools="hover",y_range=Range1d(0,1500))
+    p = figure(x_axis_type="datetime", y_range=Range1d(0, 1500), plot_width=1500)
+    #p = figure(x_axis_type="datetime", tools=tools, y_range=Range1d(0, 1500))
     p.multi_line(xs='xs',
                     ys='ys',
                     legend='labels',
                     line_color='color',
                     line_width=3,
                     source=data)
+    #p.add_tools(HoverTool(tooltips=[('article', '@ys')]))
     tab = Panel(child=p, title=focus)
     tab_oo_list.append(tab)
 
