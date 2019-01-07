@@ -7,19 +7,17 @@ import jieba
 import codecs
 from pathlib import Path
 
-nltk.download('stopwords')
-
-
 class NewsDataset():
-    def __init__(self, transform=None, news_folder=None, op_list=None,force_rebuild=False, pkl_name='./News_PD.pkl'):
+    def __init__(self, transform=None, news_folder=None, op_list=None,force_rebuild=False, pkl_name='./News_PD.pkl', FnStopword=None):
         self.transform = transform
         self.news_folder = news_folder
         self.op_list = op_list
         self.pkl_name = pkl_name
         self.News_PD = pd.DataFrame(columns=['uid','op_name', 'date', 'Title', 'BigCateogy', 'Category', 'URL', 'WordSeg'])
+        #self.News_PD.style.set_properties(**{'tet-align': 'left'})
         self.uid = 0
         self.ParaChecker()
-        self.stopwords = codecs.open('stopwords', 'r', 'utf-8').read().split('\n')
+        self.stopwords = codecs.open(FnStopword, 'r', 'utf-8').read().split('\n')
 
         # force to rebuild (reset) pandas if force_build flag is TRUE
         # otherwise to read pandas pickle
@@ -49,7 +47,7 @@ class NewsDataset():
                                           ''],index=self.News_PD.columns)
                     self.News_PD = self.News_PD.append(one_news, ignore_index=True)
                 fn.close()
-        #self.update_segmentation(method='Jieba')
+        self.update_segmentation(method='Jieba')
         self.News_PD.to_pickle('News_PD.pkl')
         return None
 
@@ -73,7 +71,7 @@ class NewsDataset():
             raise ValueError
 
         for op_name in self.op_list:
-            if not Path(self.news_folder + op_name).exists():
+            if not Path(self.news_folder, op_name).exists():
                 print('op_name is NOT exist ==> ' + str(Path(self.news_folder , op_name)))
                 raise ValueError
 
@@ -93,12 +91,16 @@ class NewsDataset():
             return IndexError
 
 
-    def stopword(self,step_version):
+    #def stopword(self,step_version):
 
     def update_segmentation(self,method='Jieba'):
-        #num_pandas = self.News_PD.__len__()
+        def seg_apply_stopword(x):
+            befor_stopword = jieba.lcut(x)
+            after_stopword = list(filter(lambda word: word not in self.stopwords, befor_stopword))
+            return after_stopword
+
         if method == 'Jieba':
-            segmentation = lambda x: jieba.lcut(x)
+            segmentation = lambda x: seg_apply_stopword(x)
         else:
             # reserve for other segmentation method such as CKIP
             segmentation = lambda x: jieba.lcut(x)
@@ -108,11 +110,11 @@ class NewsDataset():
 
 
 if __name__=='__main__':
-    news_folder = './00_corpus1/'
+    news_folder = './corpus/'
     pkl_name = './News_PD.pkl'
     #op_list = ['AppleDaily', 'LTN', 'DogNews', 'BusinessTimes', 'ChinaElectronicsNews', 'Chinatimes']
     op_list = ['AppleDaily']
-    Stopword_name = './stopword'
+    FnStopword = './stopwords/stopwords357'
 
-    dataset = NewsDataset(news_folder=news_folder,op_list=op_list,force_rebuild=True, pkl_name=pkl_name)
+    dataset = NewsDataset(news_folder=news_folder,op_list=op_list,force_rebuild=True, pkl_name=pkl_name, FnStopword=FnStopword)
     print('dataset size = ' + str(dataset.__len__()))
