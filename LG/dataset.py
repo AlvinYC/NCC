@@ -16,8 +16,9 @@ class NewsDataset():
         self.News_PD = pd.DataFrame(columns=['uid','op_name', 'date', 'Title', 'BigCateogy', 'Category', 'URL', 'WordSeg'])
         #self.News_PD.style.set_properties(**{'tet-align': 'left'})
         self.uid = 0
+        self.FnStopword = FnStopword
         self.ParaChecker()
-        self.stopwords = codecs.open(FnStopword, 'r', 'utf-8').read().split('\n')
+        self.stopwords = codecs.open(FnStopword, 'r', 'utf-8').read().split('\n') if self.FnStopword != None else None
 
         # force to rebuild (reset) pandas if force_build flag is TRUE
         # otherwise to read pandas pickle
@@ -47,7 +48,7 @@ class NewsDataset():
                                           ''],index=self.News_PD.columns)
                     self.News_PD = self.News_PD.append(one_news, ignore_index=True)
                 fn.close()
-        self.update_segmentation(method='Jieba')
+        self.update_segmentation(method='Jieba', apply_stop=True)
         self.News_PD.to_pickle('News_PD.pkl')
         return None
 
@@ -75,9 +76,10 @@ class NewsDataset():
                 print('op_name is NOT exist ==> ' + str(Path(self.news_folder , op_name)))
                 raise ValueError
 
-        if not Path('./stopwords').exists():
-            print('stopword not found')
-            raise ValueError
+        if self.FnStopword != None:
+            if not Path(self.FnStopword).exists():
+                print('stopword not found ==> ' + str(self.FnStopword))
+                raise ValueError
 
 
     def __len__(self):
@@ -90,13 +92,13 @@ class NewsDataset():
         except:
             return IndexError
 
-
-    #def stopword(self,step_version):
-
-    def update_segmentation(self,method='Jieba'):
+    def update_segmentation(self,method='Jieba', apply_stop=True):
         def seg_apply_stopword(x):
             befor_stopword = jieba.lcut(x)
-            after_stopword = list(filter(lambda word: word not in self.stopwords, befor_stopword))
+            if (apply_stop == True) and (self.FnStopword != None):
+                after_stopword = list(filter(lambda word: word not in self.stopwords, befor_stopword))
+            else:
+                after_stopword = befor_stopword
             return after_stopword
 
         if method == 'Jieba':
