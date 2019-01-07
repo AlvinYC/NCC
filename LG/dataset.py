@@ -5,6 +5,7 @@ import pandas as pd
 import datetime
 import jieba
 import codecs
+import time
 from pathlib import Path
 
 class NewsDataset():
@@ -14,7 +15,6 @@ class NewsDataset():
         self.op_list = op_list
         self.pkl_name = pkl_name
         self.News_PD = pd.DataFrame(columns=['uid','op_name', 'date', 'Title', 'BigCateogy', 'Category', 'URL', 'WordSeg'])
-        #self.News_PD.style.set_properties(**{'tet-align': 'left'})
         self.uid = 0
         self.FnStopword = FnStopword
         self.ParaChecker()
@@ -23,7 +23,7 @@ class NewsDataset():
         # force to rebuild (reset) pandas if force_build flag is TRUE
         # otherwise to read pandas pickle
         if force_rebuild == False:
-            if Path('./News_PD.pkl').exists():
+            if Path(self.pkl_name).exists():
                 self.News_PD = pd.read_pickle(self.pkl_name)
                 return None
 
@@ -35,9 +35,13 @@ class NewsDataset():
                 date_info = self.RetrieveDateFromFname(json_file)
                 fn        = open(str(json_file))
                 json_data = fn.read()
-                Jdata      = json.loads(json_data)
+                Jdata     = json.loads(json_data)
 
                 for Jitem in Jdata:
+                    # skip this item because pandas already exists same title
+                    if self.Duplicate_Check(op_name, Jdata[Jitem]['Title']) == True:
+                        continue
+
                     one_news = pd.Series([self.News_PD.__len__(),
                                           op_name,
                                           date_info,
@@ -49,8 +53,11 @@ class NewsDataset():
                     self.News_PD = self.News_PD.append(one_news, ignore_index=True)
                 fn.close()
         self.update_segmentation(method='Jieba', apply_stop=True)
-        self.News_PD.to_pickle('News_PD.pkl')
+        self.News_PD.to_pickle(self.pkl_name)
         return None
+
+    def Duplicate_Check(self,op_name,Title):
+        return self.News_PD[self.News_PD['op_name']==op_name]['Title'].isin([Title]).any()
 
     def RetrieveDateFromFname(self,json_file_name):
         date_info = re.search('.*/(\d+)\.json', str(json_file_name)).group(1)  # get date information from file name
@@ -63,6 +70,10 @@ class NewsDataset():
         return date_info
 
     def ParaChecker(self):
+        if not Path(self.news_folder).exists():
+            print('news_folder is NOT exist ==> ' + str(news_folder))
+            raise ValueError
+
         if not Path(self.news_folder).exists():
             print('news_folder is NOT exist ==> ' + str(news_folder))
             raise ValueError
@@ -113,10 +124,14 @@ class NewsDataset():
 
 if __name__=='__main__':
     news_folder = './corpus/'
-    pkl_name = './News_PD.pkl'
-    #op_list = ['AppleDaily', 'LTN', 'DogNews', 'BusinessTimes', 'ChinaElectronicsNews', 'Chinatimes']
-    op_list = ['AppleDaily']
-    FnStopword = './stopwords/stopwords357'
+    pkl_name    = './News_PD.pkl'
+    FnStopword  = './stopwords/stopwords357'
+    op_list     = ['AppleDaily', 'LTN', 'DogNews', 'BusinessTimes', 'ChinaElectronicsNews', 'Chinatimes']
+    #op_list    = ['AppleDaily']
 
+
+    start = time.time()
     dataset = NewsDataset(news_folder=news_folder,op_list=op_list,force_rebuild=True, pkl_name=pkl_name, FnStopword=FnStopword)
     print('dataset size = ' + str(dataset.__len__()))
+    end = time.time()
+    print('execution time = ' + str(end-start))
